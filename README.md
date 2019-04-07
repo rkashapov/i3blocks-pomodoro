@@ -8,4 +8,5 @@ interval=1
 ```
 
 A left mouse click on the app block on i3bar toggles pause.
-A right mouse click resets timer.
+
+A right mouse click resets the timer.
