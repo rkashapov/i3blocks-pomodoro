@@ -17,12 +17,8 @@ def notify(text):
 
 def daemonize():
     if os.fork() > 0:
-        print("running...")
         exit()
     os.setsid()
-    if os.fork() > 0:
-        exit()
-    os.setpgid(os.getpid(), os.getpid())
     if os.fork() > 0:
         exit()
 
@@ -54,7 +50,6 @@ class Pomodoro:
         self._remaining = 0
         self._do_reset = False
         self._running = False
-        self._thread = Thread(target=self._start)
 
     @property
     def state(self):
@@ -72,9 +67,6 @@ class Pomodoro:
         self._cycle.reset()
 
     def start(self):
-        self._thread.start()
-
-    def _start(self):
         for timeout, state, message in self._cycle:
             if self._do_reset:
                 self._do_reset = False
@@ -112,7 +104,7 @@ class App:
 
         daemonize()
 
-        self._pomodoro.start()
+        Thread(target=self._pomodoro.start).start()
         self._handle_connections()
 
     def display(self):
