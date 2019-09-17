@@ -3,6 +3,8 @@
 Simple Pomodoro app inspired by spt project.
 The app designed to be used with i3blocks.
 """
+
+import errno
 import os
 import socket
 from itertools import cycle
@@ -86,7 +88,7 @@ class Pomodoro:
 
 
 class App:
-    ADDRESS = "\0pomodoro"
+    ADDRESS = '/tmp/pomodoro.sock'
     PAUSE = b"pause"
     RESET = b"reset"
     DISPLAY = b"display"
@@ -99,8 +101,19 @@ class App:
     def run(self):
         try:
             self._sock.bind(self.ADDRESS)
-        except socket.error:
-            raise AlredyStartedError()
+        except socket.error as e:
+            if e.errno != errno.EADDRINUSE:
+                raise e
+
+            try:
+                self._sock.connect(self.ADDRESS)
+            except socket.error as err:
+                if err.errno != errno.ECONNREFUSED:
+                    raise e
+                os.unlink(self.ADDRESS)
+                self._sock.bind(self.ADDRESS)
+            else:
+                raise AlredyStartedError()
 
         daemonize()
 
@@ -117,7 +130,6 @@ class App:
         self._send(self.RESET)
 
     def _send(self, command):
-        self._sock.connect(self.ADDRESS)
         self._sock.sendall(command)
         print(self._sock.recv(32).decode("utf-8"))
 
